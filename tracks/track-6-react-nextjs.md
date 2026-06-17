@@ -6,6 +6,8 @@
 
 *Spine course: **React Performance, v2** (Steve Kinney) — Fiber and reconciliation, the causes of re-renders, `memo`/`useMemo`/`useCallback`, virtualization, code-splitting, Suspense and hydration, transitions, and the React 19 compiler. THE course for this track; watch the relevant section before each module. **JavaScript Performance** (Steve Kinney) and the React DevTools Profiler underpin it.*
 
+*Modules 6.15–6.18 are a **bundle-graph deep-dive** — tree-shaking failures, duplicate dependencies, module federation, and interrogating the whole dependency graph to answer "why is this in my bundle?". They extend Module 6.8 (code splitting) from treemap-reading into true systems-level reasoning about why your bundle graph is shaped the way it is (the depth Yangshun Tay's "understanding your specific bundle graph" points at). They're at the end so nothing renumbers, but they pair naturally with 6.8 — do them right after it if you want the bundler depth together. Spine for these: **Web Performance with Webpack** (Sean Larkin), if you have it; otherwise the primary sources in each module.*
+
 ---
 
 ## Module 6.1 — The React Render Model: Why Components Re-render
@@ -15,17 +17,14 @@
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the opening sections on **how React renders** and **what causes a re-render** (state change, parent re-render, context change). The foundation of the entire track.
 
 **Primary sources:**
-
 - **React docs — Render and Commit** — https://react.dev/learn/render-and-commit — *Focus on: trigger → render → commit, and that "render" is React calling your component, not touching the DOM.*
 - **Josh Comeau — Why React Re-renders** — https://www.joshwcomeau.com/react/why-react-re-renders/ — *Read fully. The clearest explanation of the real re-render triggers (and the myths).*
 - **React docs — State as a snapshot** — https://react.dev/learn/state-as-a-snapshot — *Focus on: how a state change schedules a re-render.*
 
 **Search prompts:**
-
 - `"why react component re-renders parent state props"`
 - `"react render vs commit phase"`
 - Ask an AI: *"Explain precisely what causes a React component to re-render: its own state changing, its parent re-rendering, or a context it consumes changing. Bust the myth that 'a component only re-renders when its props change' — by default a child re-renders whenever its parent does, regardless of props. What's the difference between the render phase and the commit phase?"*
@@ -71,7 +70,6 @@ by default. Verdict: do I deeply understand the React render model (proceed), or
 - Render vs commit: "render" = React calls your function to compute the new tree (CPU cost, even if output is identical); "commit" = React applies minimal DOM changes. A re-render isn't automatically a DOM update — but it IS wasted CPU if output is unchanged.
 
 The principle: **a React component re-renders due to its own state, its parent rendering, or a context change — and the parent-renders-child default means re-renders cascade down regardless of props.** Understanding this precisely is the prerequisite for every React optimization; without it, memoization is cargo-culting.
-
 </details>
 
 ---
@@ -83,17 +81,14 @@ The principle: **a React component re-renders due to its own state, its parent r
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **Fiber / reconciliation** sections — how React diffs the tree, what the virtual DOM does, and how keys drive list reconciliation.
 
 **Primary sources:**
-
 - **React docs — Preserving and resetting state** — https://react.dev/learn/preserving-and-resetting-state — *Focus on: same-component-same-position preserves state; keys control identity.*
 - **React docs — Rendering lists (keys)** — https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key — *Focus on: why index keys break on reorder/insert.*
 - **React (legacy) — Reconciliation** — https://legacy.reactjs.org/docs/reconciliation.html — *Focus on: the diffing heuristics.*
 
 **Search prompts:**
-
 - `"react reconciliation fiber virtual dom diffing"`
 - `"react key index anti-pattern reorder performance"`
 - Ask an AI: *"Explain React reconciliation: what the virtual DOM is, how React diffs old and new trees to compute minimal DOM updates, and how keys identify list items across renders. Why does array-index-as-key cause both correctness bugs AND extra DOM work when a list reorders or items are inserted? What is Fiber?"*
@@ -137,7 +132,6 @@ keys for performance (proceed), or redo Exercise 1?
 - Reconciliation: React diffs a virtual tree using heuristics (different type → replace subtree; same type → update in place; keyed children → match by key) and commits the **minimal** real DOM changes. **Fiber** is the reconciler architecture that makes the work interruptible (enabling concurrent features, Module 6.12).
 
 The principle: **reconciliation diffs the virtual tree to compute minimal DOM updates, and keys are how React identifies elements across renders — stable unique keys let it reuse work, index keys force DOM churn and state bugs on reorder.** Understanding the diff lets you reason about commit cost, not just render cost.
-
 </details>
 
 ---
@@ -149,16 +143,13 @@ The principle: **reconciliation diffs the virtual tree to compute minimal DOM up
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **React DevTools Profiler** sections — recording, the flame graph and ranked chart, and finding components that rendered unnecessarily.
 
 **Primary sources:**
-
 - **React docs — React Developer Tools / Profiler** — https://react.dev/learn/react-developer-tools — *Focus on: recording a profile and reading commits.*
 - **React docs — `<Profiler>`** — https://react.dev/reference/react/Profiler — *Focus on: `actualDuration` vs `baseDuration`.*
 
 **Search prompts:**
-
 - `"react devtools profiler flame graph ranked wasted renders"`
 - `"react profiler why did this render"`
 - Ask an AI: *"Teach me the React DevTools Profiler: recording an interaction, reading the flame graph (which components rendered and how long) and the ranked chart, using 'Highlight updates' to see re-renders live, and enabling 'Record why each component rendered.' How do I distinguish a NECESSARY render from a WASTED one?"*
@@ -199,7 +190,6 @@ measured cost, not guesses. Verdict: can I profile a React app and find the wast
 <summary>Click only after you finish or give up</summary>
 
 Instrument training — the React equivalent of Track 0's flame-chart bootcamp. You should now be able to:
-
 - **Record** an interaction and read the **flame graph** (each bar = a component that rendered; width = time) and the **ranked chart** (sorted by render time).
 - Enable **"Record why each component rendered"** so the Profiler names the trigger (props/state/parent/context) — turning "it re-rendered" into "it re-rendered *because*."
 - Use **"Highlight updates"** to see re-render cascades live.
@@ -207,7 +197,6 @@ Instrument training — the React equivalent of Track 0's flame-chart bootcamp. 
 - **Prioritize by measured cost** — fix components that render often AND take long.
 
 The principle: **the React Profiler turns re-rendering from invisible to measurable — which components rendered, how long, and why — so you fix wasted renders on evidence, not superstition.** Always profile before optimizing.
-
 </details>
 
 ---
@@ -219,17 +208,14 @@ The principle: **the React Profiler turns re-rendering from invisible to measura
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **state placement** material — reducing re-render scope by moving state down (colocation/lifting content as the first-line fix before memoization).
 
 **Primary sources:**
-
 - **Kent C. Dodds — State Colocation will make your React app faster** — https://kentcdodds.com/blog/state-colocation-will-make-your-react-app-faster — *Read fully.*
 - **Dan Abramov — Before You memo()** — https://overreacted.io/before-you-memo/ — *Focus on: moving state down and lifting content up (composition).*
 - **React docs — Sharing state** — https://react.dev/learn/sharing-state-between-components — *Focus on: closest-common-ancestor placement.*
 
 **Search prompts:**
-
 - `"react state colocation move state down performance"`
 - `"react lift content up children prop avoid re-render"`
 - Ask an AI: *"Explain state colocation: why moving state DOWN to the smallest component that needs it shrinks the re-render scope. Then the 'lift content up / pass children' pattern — how passing an expensive subtree as `children` keeps it from re-rendering when the stateful parent updates. Why are these better first moves than memoization?"*
@@ -275,7 +261,6 @@ re-render scope structurally (proceed), or redo Exercise 1?
 - Re-measure: the scope collapses from the whole tree to a small piece. These are free (no comparison cost, no deps, no staleness) and often eliminate the problem outright.
 
 The principle: **the cheapest re-render is the one that never happens — moving state down and lifting content up shrink the re-render scope structurally, and they're the correct FIRST optimization, before memoization.** Many "memo everything" situations dissolve once state lives in the right place.
-
 </details>
 
 ---
@@ -287,17 +272,14 @@ The principle: **the cheapest re-render is the one that never happens — moving
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **`memo` / `useMemo` / `useCallback`** sections — what each does, referential equality, and why a new inline function/object prop defeats `memo`.
 
 **Primary sources:**
-
 - **React docs — `memo`** — https://react.dev/reference/react/memo — *Focus on: skipping re-renders on referentially-equal props, and what defeats it.*
 - **React docs — `useMemo` / `useCallback`** — https://react.dev/reference/react/useMemo — *Focus on: caching a value / function identity, and "should you add it everywhere?"*
 - **Dan Abramov — Before You memo()** — https://overreacted.io/before-you-memo/ — *Focus on: when memo is wasted overhead.*
 
 **Search prompts:**
-
 - `"react.memo not working new function object prop"`
 - `"usememo usecallback when actually needed referential equality"`
 - Ask an AI: *"Explain when `React.memo`, `useMemo`, and `useCallback` actually help vs are wasted overhead. Why does a new inline function/object prop defeat a `memo`'d child? How do `useCallback`/`useMemo` stabilize references? Why is memoization NOT free, so sprinkling it everywhere can hurt?"*
@@ -344,7 +326,6 @@ Exercise 1?
 - The method: **profile first**, memoize only where a measured expensive/wasted render justifies it, and ensure the memo isn't defeated by an unstable prop upstream.
 
 The principle: **`React.memo` only skips a re-render when props are referentially equal, so unstable function/object props silently defeat it; `useMemo`/`useCallback` provide that stability or cache real work — but memoization has its own cost, so it's a measured, surgical tool, applied after colocation/composition.**
-
 </details>
 
 ---
@@ -356,16 +337,13 @@ The principle: **`React.memo` only skips a re-render when props are referentiall
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **Context** performance section — why every consumer re-renders on a context value change, and how to split/stabilize.
 
 **Primary sources:**
-
 - **React docs — Passing data deeply with context** — https://react.dev/learn/passing-data-deeply-with-context — *Focus on: every consumer re-renders when the provider value changes by reference.*
 - **React docs — Scaling up with reducer + context** — https://react.dev/learn/scaling-up-with-reducer-and-context — *Focus on: separating state and dispatch contexts.*
 
 **Search prompts:**
-
 - `"react context re-render all consumers performance"`
 - `"split context value memo provider re-render"`
 - Ask an AI: *"Why does every consumer of a React Context re-render when the provider's `value` changes — and why does passing a NEW object as `value` each render re-render ALL consumers every time? Fixes: memoize the value, split one big context into multiple by concern, separate state from dispatch."*
@@ -409,7 +387,6 @@ context cascades (proceed), or redo Exercise 1?
 - Re-measure: each consumer re-renders only for relevant changes.
 
 The principle: **context delivers an update to every consumer whenever the provider's `value` changes by reference — so a fresh value object or one over-broad context re-renders the entire consumer set, and the fixes are memoizing the value and splitting by concern.** Context is a transport, not an optimized store.
-
 </details>
 
 ---
@@ -421,16 +398,13 @@ The principle: **context delivers an update to every consumer whenever the provi
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **virtualization / windowing** section — rendering only visible rows to keep huge lists fast.
 
 **Primary sources:**
-
 - **TanStack Virtual — Introduction** — https://tanstack.com/virtual/latest/docs/introduction — *Focus on: windowing, `estimateSize`, `overscan`.*
 - **web.dev — Virtualize large lists** — https://web.dev/articles/virtualize-long-lists-react-window — *Focus on: the windowing math and constant DOM node count.*
 
 **Search prompts:**
-
 - `"react list virtualization windowing tanstack virtual"`
 - `"render only visible rows constant dom nodes"`
 - Ask an AI: *"Explain list virtualization (windowing): given scroll position, row height, and container height, which row indices are visible? How does rendering only the visible window (plus overscan) while faking full scroll height keep a 100k-row list at a constant ~30 DOM nodes? What makes variable-height rows harder, and what does `overscan` do?"*
@@ -480,11 +454,9 @@ Exercise 1?
 - Re-measure: constant nodes, tiny commit, smooth scroll at 100k rows.
 
 The principle: **virtualization renders only the visible window (plus overscan) while faking full scroll height, so a 100k-row list costs the same as a 30-row one — the windowing math is the core, variable-height rows the hard extension.** The canonical "render at scale" technique and a frequent senior interview topic.
-
 </details>
 
 ---
-
 ## Module 6.8 — Code Splitting & Lazy Loading Components
 
 **Difficulty:** ●●●●○ · **Format:** Broken project · **Stack:** React + Vite + bundle visualizer
@@ -492,18 +464,15 @@ The principle: **virtualization renders only the visible window (plus overscan) 
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **code-splitting / `React.lazy` / Suspense** section — splitting by route/component to shrink the initial bundle.
 - **Web Performance with Webpack** (Sean Larkin) — optional deeper dive on splitting and bundle analysis if you do that course.
 
 **Primary sources:**
-
 - **React docs — `lazy` and Suspense** — https://react.dev/reference/react/lazy — *Focus on: lazy-loading a component and its chunk.*
 - **web.dev — Code splitting with dynamic `import()`** — https://web.dev/articles/reduce-javascript-payloads-with-code-splitting — *Focus on: route/feature split points.*
 - **vite-bundle-visualizer / rollup-plugin-visualizer** — https://github.com/btd/rollup-plugin-visualizer — *Focus on: reading the treemap to find what to split.*
 
 **Search prompts:**
-
 - `"react lazy suspense route code splitting"`
 - `"bundle analyzer treemap reduce initial bundle"`
 - Ask an AI: *"Explain code splitting in React: how `React.lazy` + `Suspense` and dynamic `import()` create separate chunks loaded on demand, splitting by route or heavy feature so the initial bundle stays small. How do I read a bundle treemap to find the biggest offenders, and what's the cost of OVER-splitting into many tiny chunks?"*
@@ -548,7 +517,6 @@ initial bundle via splitting (proceed), or redo Exercise 1?
 - Over-splitting: many tiny chunks → many requests and possible waterfalls. Split at **meaningful boundaries** (routes, heavy features), not everything. Each lazy boundary needs a Suspense fallback.
 
 The principle: **code splitting keeps the initial bundle small by deferring non-critical code into on-demand chunks, and the treemap shows exactly what to defer — the goal being the smallest initial payload that renders the first view, without fragmenting into a waterfall.** One of the biggest start-up levers for a real app.
-
 </details>
 
 ---
@@ -560,17 +528,14 @@ The principle: **code splitting keeps the initial bundle small by deferring non-
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **server-side rendering & hydration** section — what hydration costs and why too much client JS makes a server-rendered page feel slow to become interactive.
 
 **Primary sources:**
-
 - **web.dev — Rendering on the web (hydration)** — https://web.dev/articles/rendering-on-the-web — *Focus on: SSR + hydration, and the gap where HTML is visible but not interactive.*
 - **Next.js — Server and Client Components** — https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns — *Focus on: `'use client'` boundaries and shipping less client JS.*
 - **React docs — `hydrateRoot`** — https://react.dev/reference/react-dom/client/hydrateRoot — *Focus on: attaching interactivity to server HTML.*
 
 **Search prompts:**
-
 - `"react hydration cost ssr interactive delay"`
 - `"next.js use client boundary reduce client javascript"`
 - Ask an AI: *"Explain hydration: a server-rendered page shows HTML fast, but React must download the JS and 'hydrate' (attach listeners, rebuild state) before it's interactive — so during that gap the page looks ready but ignores clicks (bad INP/TBT). Why does shipping LESS client JS (more server components, fewer `'use client'` boundaries) reduce hydration cost?"*
@@ -615,7 +580,6 @@ perf implications. Verdict: can I diagnose and reduce hydration cost (proceed), 
 - Mental model: server components are free of client JS cost; every `'use client'` boundary is a hydration bill — keep interactive islands small, static majority on the server.
 
 The principle: **hydration is the cost of making server-rendered HTML interactive — downloading and running client JS to attach behavior — so a page can look ready while ignoring input, and the fix is shipping less client JS by keeping `'use client'` boundaries small.** Essential for modern Next.js performance.
-
 </details>
 
 ---
@@ -627,16 +591,13 @@ The principle: **hydration is the cost of making server-rendered HTML interactiv
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **Suspense / streaming** material — sending the fast shell first and streaming slower parts in.
 
 **Primary sources:**
-
 - **Next.js — Loading UI and Streaming** — https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming — *Focus on: `loading.js`, Suspense boundaries, streaming fast parts before slow.*
 - **React docs — `<Suspense>`** — https://react.dev/reference/react/Suspense — *Focus on: showing a fallback for a slow part without blocking the rest.*
 
 **Search prompts:**
-
 - `"next.js streaming suspense loading.js fast shell"`
 - `"streaming ssr ttfb stream slow components"`
 - Ask an AI: *"Explain streaming SSR with Suspense in Next.js: instead of waiting for ALL data before sending any HTML, stream the fast shell immediately and stream slow components in as their data resolves (fallback meanwhile). How does wrapping a slow data-dependent component in `<Suspense>` improve TTFB/FCP and perceived speed?"*
@@ -679,7 +640,6 @@ placement. Verdict: can I use streaming/Suspense to improve real load (proceed),
 - Boundary placement (Exercise 2): granular boundaries let each slow section stream independently; one coarse boundary lets a slow part block a large region. Isolate each independently-slow piece.
 
 The principle: **streaming SSR with Suspense sends the fast shell immediately and streams slow data-dependent parts in as they resolve — so one slow query no longer blocks the whole page, improving TTFB, FCP, and perceived speed.** Correct boundary placement is the skill.
-
 </details>
 
 ---
@@ -691,16 +651,13 @@ The principle: **streaming SSR with Suspense sends the fast shell immediately an
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **React Server Components** material — moving work and code to the server to ship less client JS (pairs with hydration).
 
 **Primary sources:**
-
 - **Next.js — Server Components** — https://nextjs.org/docs/app/building-your-application/rendering/server-components — *Focus on: zero client JS for server components, async data fetching on the server.*
 - **React docs — Server Components** — https://react.dev/reference/rsc/server-components — *Focus on: what stays off the client.*
 
 **Search prompts:**
-
 - `"react server components reduce client bundle javascript"`
 - `"move heavy library to server component next.js"`
 - Ask an AI: *"Explain how React Server Components reduce client JavaScript: a server component runs only on the server and ships ZERO JS to the client (just rendered output), so moving data fetching, heavy formatting/parsing libraries, and non-interactive UI to server components shrinks the client bundle and hydration cost. What CAN'T be a server component (anything interactive/stateful/browser-API)?"*
@@ -746,7 +703,6 @@ boundary for minimal client JS (proceed), or redo Exercise 1?
 - What must stay client: anything using state/effects/handlers/browser APIs.
 
 The principle: **server components ship zero client JavaScript — only rendered output — so moving data fetching, heavy non-interactive libraries, and static UI to the server shrinks both the client bundle and hydration cost, while only genuinely interactive pieces stay client.** One of the most impactful modern React performance skills.
-
 </details>
 
 ---
@@ -758,17 +714,14 @@ The principle: **server components ship zero client JavaScript — only rendered
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **concurrent features / transitions** section — `useTransition` and `useDeferredValue` for keeping the UI responsive during expensive updates.
 
 **Primary sources:**
-
 - **React docs — `useTransition`** — https://react.dev/reference/react/useTransition — *Focus on: marking a non-urgent update so urgent input stays responsive; `isPending`.*
 - **React docs — `useDeferredValue`** — https://react.dev/reference/react/useDeferredValue — *Focus on: deferring a value so expensive renders driven by it don't block urgent updates.*
 - **React docs — startTransition** — https://react.dev/reference/react/startTransition — *Focus on: how concurrent React interrupts a non-urgent render.*
 
 **Search prompts:**
-
 - `"react usetransition ispending non-urgent update responsive input"`
 - `"react usedeferredvalue expensive list filter"`
 - Ask an AI: *"Explain `useTransition` and `useDeferredValue`. What's an urgent vs non-urgent update, and how does marking an expensive update as a transition keep the input responsive (concurrent React interrupts the non-urgent render for urgent input)? Difference: transition wraps the update you control, deferredValue wraps a value you receive. Crucially: do they make the work faster, or just keep the UI responsive?"*
@@ -817,7 +770,6 @@ understand concurrent React for responsiveness (proceed), or redo Exercise 1?
 - Common mistakes: marking the input value itself as a transition (laggy typing); using both hooks redundantly; expecting a speedup; no pending feedback.
 
 The principle: **concurrent React can interrupt a low-priority render to handle urgent input, so marking the expensive update as a transition — or deferring the value that drives it — keeps typing responsive while the heavy view catches up; it improves responsiveness, not raw speed.** Transitions act at the source, deferred values at consumption.
-
 </details>
 
 ---
@@ -829,16 +781,13 @@ The principle: **concurrent React can interrupt a low-priority render to handle 
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - **React Performance, v2** (Steve Kinney) → the **React Compiler** section (React 19) — automatic memoization and what it changes about your `memo`/`useMemo`/`useCallback` discipline.
 
 **Primary sources:**
-
 - **React docs — React Compiler** — https://react.dev/learn/react-compiler — *Focus on: what the compiler auto-memoizes, its rules-of-React requirements, and what it does/doesn't replace.*
 - **React blog — React Compiler announcement** — https://react.dev/blog — *Focus on: the motivation (eliminate manual memoization) and current status.*
 
 **Search prompts:**
-
 - `"react compiler automatic memoization react 19"`
 - `"react compiler replace usememo usecallback"`
 - Ask an AI: *"Explain the React Compiler: how it automatically memoizes components and values at build time so you (mostly) don't need manual `memo`/`useMemo`/`useCallback`. What 'rules of React' must your code follow for it to work, what does it NOT solve (re-render scope, algorithmic cost, bundle size), and should I still understand manual memoization?"*
@@ -882,7 +831,6 @@ its limits. Verdict: do I understand where automatic memoization ends and engine
 - Why you still learned manual memoization (Module 6.5): you need to understand *what* is being automated to reason about performance, debug when the compiler opts out, and work in codebases not yet using it.
 
 The principle: **the React Compiler automates memoization so you rarely hand-write `memo`/`useMemo`/`useCallback`, but it doesn't replace performance engineering — re-render scope, algorithms, virtualization, bundle size, and hydration are still yours.** Understanding the render model matters more than ever, because the compiler is a tool you direct, not a substitute for judgment.
-
 </details>
 
 ---
@@ -894,16 +842,13 @@ The principle: **the React Compiler automates memoization so you rarely hand-wri
 ### Prep — Read & Watch Before You Start
 
 **Watch (Frontend Masters — prerequisite):**
-
 - Revisit whichever **React Performance, v2** sections covered the issues you found hardest. This capstone integrates the whole track.
 
 **Primary sources:**
-
 - **React docs — Profiler (revisit)** — https://react.dev/reference/react/Profiler — *Focus on: attributing render cost.*
 - **web.dev — Optimize INP (React angle)** — https://web.dev/articles/optimize-inp — *Focus on: interaction responsiveness in a React app.*
 
 **Search prompts:**
-
 - `"diagnose react app performance methodology profiler"`
 - Ask an AI: *"Give me a systematic method to diagnose a slow React app: profile to find wasted/expensive renders, classify each (re-render scope? unstable props defeating memo? context cascade? huge list? big bundle? hydration? algorithmic cost in render?), and apply the matching fix (colocation, memo, split context, virtualize, code-split, server components, better algorithm) in order of leverage."*
 
@@ -943,7 +888,6 @@ Track 7), or do I need to redo parts of Track 6?
 <summary>Click only after you finish or give up</summary>
 
 The app combines the track:
-
 - **Over-lifted state** → colocation/composition (6.4).
 - **Context cascade** → split/memoize context (6.6).
 - **Memo defeated by unstable props** → stabilize or restructure (6.5).
@@ -952,18 +896,278 @@ The app combines the track:
 - Possibly **over-hydration / too much client JS** → server components, smaller `'use client'` (6.9/6.11).
 
 The methodology you should now run unprompted:
-
 1. **Profile** (React Profiler for renders + a Performance trace for main-thread/commit cost); baseline.
 2. **For each problem, classify the cause:** re-render scope, unstable props, context, list size, bundle size, hydration, or algorithmic cost in render.
 3. **Apply the matching fix in leverage order** — colocation/composition first (free, structural), then context/memo, then virtualize/code-split/server-components — one at a time, re-measuring.
 4. **Report** the cumulative improvement.
 
 The principle: **diagnosing a slow React app is systematic attribution — profile, classify each bottleneck by cause, and apply the matching fix in order of leverage (structural before memoization before architectural).** This capstone is your React end goal: open a slow React app and name why it's slow and how to fix each part. If you can do Exercise 2 cold, you own your own stack's performance — the single most marketable skill for your career.
-
 </details>
 
 ---
 
-*End of Track 6 — React & Next.js Performance at Scale. 14 modules. You can now diagnose any React app's performance from the render model up — re-renders, reconciliation, memoization, context, virtualization, code-splitting, hydration, server components, concurrent features, and the compiler.*
+## Module 6.15 — Tree-Shaking & Why It Silently Fails
+
+**Difficulty:** ●●●●○ · **Format:** Investigation + broken project · **Stack:** React + Vite/Rollup + bundle visualizer
+
+### Prep — Read & Watch Before You Start
+
+**Watch (Frontend Masters — prerequisite):**
+- **Web Performance with Webpack** (Sean Larkin) → the tree-shaking / dead-code-elimination sections, if you do that course — the mechanics generalize to Rollup/Vite/esbuild.
+
+**Primary sources:**
+- **webpack — Tree Shaking** — https://webpack.js.org/guides/tree-shaking/ — *Focus on: ES modules, the `sideEffects` field in package.json, and why CommonJS / side effects defeat shaking.*
+- **MDN — Tree shaking** — https://developer.mozilla.org/en-US/docs/Glossary/Tree_shaking — *Focus on: the static-analysis basis (ESM is statically analyzable; dynamic requires aren't).*
+- **"Barrel files considered harmful" / re-export costs** — search `"barrel file index.ts tree shaking performance"` — *Focus on: how `index.ts` re-export barrels pull in whole modules and defeat shaking.*
+
+**Search prompts:**
+- `"why is tree shaking not working bundle"`
+- `"sideEffects false package.json tree shaking"`
+- `"barrel file defeats tree shaking import cost"`
+- Ask an AI: *"Explain tree-shaking and why it silently fails: it relies on static analysis of ES modules to drop unused exports, so it breaks when code has side effects (or is marked side-effectful), when you use CommonJS, when a library isn't ESM, or when a BARREL file (`index.ts` re-exporting everything) makes the bundler pull in the whole module because it can't prove the rest is unused. How do I detect that a 'small import' actually dragged in a huge module, and fix it (deep imports, `sideEffects` field, ESM builds)?"*
+
+### Exercise 1 — Guided (paste into Claude Code)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.15, Exercise 1 — tree-shaking failures.
+Completed: Tracks 0–5, Modules 6.1–6.14. This extends 6.8 (code splitting) into WHY the graph is shaped
+the way it is.
+
+Build me a React + Vite app whose bundle is bigger than it should be because tree-shaking is silently
+FAILING in several ways: (1) an import from a BARREL file (`index.ts` re-exporting a whole UI/util
+library) that pulls in far more than the one thing used; (2) a library imported as CommonJS / non-ESM
+so the bundler can't shake it; (3) a module with side effects (or no `sideEffects` hint) so "unused"
+code is kept; (4) a `import * as X` namespace import that retains everything. Include a bundle
+visualizer. Do NOT tell me which imports are the problem.
+
+Have me open the treemap and find modules that are far larger than my usage justifies, then trace WHY
+each survived shaking (barrel re-export, CommonJS, side effects, namespace import). Fix each: deep/
+named imports instead of the barrel, an ESM build of the lib, a correct `sideEffects` field,
+specific named imports. Re-measure the bundle each time. Exam me on what defeats tree-shaking and how
+I detected each failure from the treemap.
+```
+
+### Exercise 2 — Transfer (paste into Claude Code; Claude verifies)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.15, Exercise 2 (transfer) — tree-shaking solo.
+Apply the Exercise 2 rules: solo first; verdict.
+
+Give me a DIFFERENT app with different tree-shaking failures (a different barrel, a different
+side-effectful or CJS dependency). Have me, solo: read the treemap, identify which imports dragged in
+more than expected, diagnose WHY shaking failed for each, and fix it — proving the bundle shrank.
+Don't tell me the offenders. Exam me on diagnosing tree-shaking failures from the graph. Verdict: can
+I find and fix silent tree-shaking failures (proceed), or redo Exercise 1?
+```
+
+### 🔒 SPOILER — The Planted Issues & What It Teaches
+
+<details>
+<summary>Click only after you finish or give up</summary>
+
+- **Tree-shaking** drops unused exports via **static analysis** of ES modules — so it only works when the bundler can *prove* code is unused. It silently fails when:
+  - **Barrel files** (`index.ts` re-exporting a whole library): importing one symbol from the barrel can pull in the entire re-exported graph, because the bundler can't always prove the rest is unused (especially with side effects). Fix: import directly from the deep path, not the barrel.
+  - **CommonJS / non-ESM** dependencies: `require` is dynamic and not statically analyzable, so the lib can't be shaken. Fix: use the library's ESM build, or a lighter alternative.
+  - **Side effects**: a module that does work on import (or isn't marked `"sideEffects": false`) is kept because removing it could change behavior. Fix: mark genuinely pure modules `sideEffects: false` (and list the real side-effectful files).
+  - **Namespace imports** (`import * as X`): retain everything since any property might be used. Fix: named imports.
+- You detect these from the **treemap**: a module far larger than your usage justifies is the signal; you then trace the import to find which failure mode kept it.
+
+The principle: **tree-shaking is static dead-code elimination over ES modules, so it silently fails on barrel re-exports, CommonJS, side-effectful modules, and namespace imports — and the treemap reveals the symptom (a module bigger than its usage), which you trace to the specific failure and fix with deep/named imports, ESM builds, and correct `sideEffects` hints.** This is the "why is my graph shaped this way" depth beneath treemap-reading.
+</details>
+
+---
+
+## Module 6.16 — Duplicate Dependencies & The Vendor Graph
+
+**Difficulty:** ●●●●○ · **Format:** Broken project · **Stack:** React + Vite/Rollup + bundle visualizer
+
+### Prep — Read & Watch Before You Start
+
+**Watch (Frontend Masters — prerequisite):**
+- **Web Performance with Webpack** (Sean Larkin) → the chunk-splitting / `splitChunks` / shared-vendor sections, if you do that course.
+
+**Primary sources:**
+- **Rollup / Vite — manualChunks & shared modules** — https://vitejs.dev/guide/build — *Focus on: how vendor code is chunked and how a module shared by several chunks is handled.*
+- **"Duplicate dependencies / multiple versions" analysis** — search `"npm dedupe multiple versions same package bundle"` — *Focus on: how two versions of one library end up both bundled, and `npm dedupe`/`resolutions`/`overrides`.*
+- **source-map-explorer / why a module is in the bundle** — search `"source-map-explorer find what is in bundle"` — *Focus on: attributing bytes to packages and spotting duplicates.*
+
+**Search prompts:**
+- `"two versions of react bundled duplicate dependency"`
+- `"npm dedupe resolutions overrides single version"`
+- `"module duplicated across chunks splitchunks shared"`
+- Ask an AI: *"Explain duplicate dependencies in a bundle: how two different versions of the same package (pulled by different deps) both get bundled, and how a single module needed by several lazy chunks can be duplicated INTO each chunk instead of shared. How do I detect duplicates (treemap / source-map-explorer), and fix them with dedupe / `resolutions` / `overrides` (version dupes) and shared-chunk config / manualChunks (cross-chunk dupes)? Why are duplicate React/large libs especially damaging?"*
+
+### Exercise 1 — Guided (paste into Claude Code)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.16, Exercise 1 — duplicate dependencies & the
+vendor graph. Completed: Tracks 0–5, Modules 6.1–6.15.
+
+Build me an app whose bundle is bloated by DUPLICATION: (1) two different versions of the same library
+pulled transitively by two dependencies, so both versions are bundled; (2) a shared utility/library
+needed by several lazy route chunks that gets COPIED into each chunk instead of being a shared chunk;
+optionally (3) a large lib duplicated because of mismatched import paths. Include a bundle visualizer.
+Do NOT tell me what's duplicated.
+
+Have me find the duplication in the treemap (same package appearing twice / a module repeated across
+chunks), diagnose WHY (version mismatch vs missing shared chunk vs path mismatch), and fix it: dedupe
+/ `resolutions`/`overrides` to collapse to one version; configure a shared/common chunk (or
+manualChunks) so the shared module is loaded once; align import paths. Re-measure. Exam me on detecting
+duplication and the two distinct causes (version dupes vs cross-chunk dupes).
+```
+
+### Exercise 2 — Transfer (paste into Claude Code; Claude verifies)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.16, Exercise 2 (transfer) — duplication solo.
+Apply the Exercise 2 rules: solo first; verdict.
+
+Give me a DIFFERENT app with a different duplication profile (a different version conflict, or a
+different cross-chunk duplication). Have me, solo: find the duplicates in the graph, diagnose the
+cause, and eliminate them — proving the size win. Don't tell me what's duplicated. Exam me on
+diagnosing and fixing dependency duplication. Verdict: can I find and collapse duplicate dependencies
+across the vendor/chunk graph (proceed), or redo Exercise 1?
+```
+
+### 🔒 SPOILER — The Planted Issues & What It Teaches
+
+<details>
+<summary>Click only after you finish or give up</summary>
+
+- Two distinct duplication problems, both visible in the treemap as a package appearing more than once:
+  - **Multiple versions of one package**: two dependencies each require a different version range of the same library, so the resolver installs and bundles **both versions**. Especially damaging for large libs (or React itself — duplicate React breaks hooks and doubles weight). Fix: `npm dedupe`, or pin a single version via `resolutions` (Yarn) / `overrides` (npm); align the version ranges.
+  - **Cross-chunk duplication**: a module needed by several lazy chunks gets **copied into each chunk** rather than extracted into a shared chunk both load. Fix: configure a shared/common chunk (or `manualChunks` in Rollup/Vite, `splitChunks` in webpack) so it's loaded once and reused.
+- You detect both from the treemap (or `source-map-explorer`): the same package/module appearing in multiple places. The fix differs by cause — version dedupe vs shared-chunk extraction — so diagnosing *which* duplication it is matters.
+
+The principle: **duplication bloats bundles two ways — multiple versions of one package (fixed by dedupe/resolutions/overrides) and one module copied across several chunks (fixed by shared-chunk extraction) — both showing in the treemap as a repeated package, and reasoning about the vendor/chunk graph is what lets you tell them apart and collapse them.** Duplicate large libraries are among the highest-value, most-overlooked bundle wins.
+</details>
+
+---
+
+## Module 6.17 — Module Federation & Splitting Across Independently-Deployed Apps
+
+**Difficulty:** ●●●●● · **Format:** Build challenge · **Stack:** React + Vite/webpack Module Federation
+
+### Prep — Read & Watch Before You Start
+
+**Primary sources:**
+- **Module Federation — docs** — https://module-federation.io — *Focus on: host/remote, exposing and consuming modules at runtime, and `shared` dependencies (so host and remote don't each ship their own React).*
+- **webpack — Module Federation** — https://webpack.js.org/concepts/module-federation/ — *Focus on: the original concept and the runtime-loading model.*
+- **"Micro-frontends tradeoffs" (Martin Fowler / web.dev)** — search `"micro frontends module federation tradeoffs performance"` — *Focus on: the real costs — shared-dependency versioning, duplicate libs across remotes, network/runtime overhead — vs the autonomy benefit.*
+
+**Search prompts:**
+- `"module federation shared dependencies singleton react"`
+- `"micro frontend duplicate dependencies across remotes"`
+- `"module federation performance tradeoffs runtime"`
+- Ask an AI: *"Explain Module Federation: a host app loads remote modules from independently-built/deployed apps at RUNTIME, and `shared` config lets them share dependencies (e.g. a single React) instead of each shipping its own. What are the performance tradeoffs — shared-dependency version negotiation, the risk of duplicate libraries across remotes, runtime/network overhead, and bundle-graph complexity — and when is the team-autonomy benefit worth those costs vs a single bundle?"*
+
+### Exercise 1 — Guided (paste into Claude Code)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.17, Exercise 1 — module federation. Completed:
+Tracks 0–5, Modules 6.1–6.16. This is advanced splitting ACROSS independently-deployed apps.
+
+Walk me through a minimal Module Federation setup: a host app that loads a remote module from a
+separately-built remote app at runtime, with a `shared` config so they share a single React (and other
+big deps) rather than each bundling their own. Have me build it and inspect the network/bundle: confirm
+the shared dep is loaded once, and then DELIBERATELY misconfigure `shared` (wrong singleton/version) so
+React duplicates across host and remote — and observe the cost and breakage. Fix it. Exam me on the
+host/remote model, how `shared` prevents duplicate deps, and the performance tradeoffs vs a single
+bundle.
+```
+
+### Exercise 2 — Transfer (paste into Claude Code; Claude verifies)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.17, Exercise 2 (transfer) — federation solo.
+Apply the Exercise 2 rules: solo first; verdict.
+
+Give me a DIFFERENT federation scenario (a second remote, or a different shared-dependency challenge).
+Have me, solo: wire it up, ensure shared deps are singletons (no duplication across remotes), verify
+from the network/graph, and articulate whether federation is even worth it here vs a single bundle.
+Don't hand me the config. Exam me on shared-dependency correctness and the performance tradeoff
+judgment. Verdict: can I reason about and configure federated splitting without duplicating deps, and
+judge when it's worth it (proceed), or redo Exercise 1?
+```
+
+### 🔒 SPOILER — What It Teaches
+
+<details>
+<summary>Click only after you finish or give up</summary>
+
+- **Module Federation** lets a **host** app load modules from independently-built, independently-deployed **remote** apps at **runtime** — the basis of micro-frontends. The critical performance lever is the **`shared`** config: it lets host and remotes **share dependencies** (a single React, a single big UI lib) instead of each shipping its own, negotiating a compatible version at runtime (often as a **singleton** for things like React that must not be duplicated).
+- The performance tradeoffs (and failure modes): **duplicate libraries across remotes** if `shared` is misconfigured (each remote ships its own React — bloat, and for React, breakage); **shared-dependency version negotiation** complexity; **runtime/network overhead** of loading remotes; and a more complex bundle graph that's harder to reason about. The benefit is **team/deploy autonomy** (teams ship independently) — which has to outweigh those costs.
+- This is the far end of "splitting": 6.8 split one app's bundle into chunks; federation splits across *separately deployed apps*, with shared-dependency management as the central perf concern.
+
+The principle: **Module Federation loads remote modules from independently-deployed apps at runtime, with `shared` (singleton) dependencies the key to avoiding duplicate libraries across remotes — trading runtime/version-negotiation complexity and graph opacity for team autonomy, a tradeoff worth making only when that autonomy outweighs the performance and complexity cost.** It's the systems-level extreme of bundle-graph thinking: the graph now spans deploy boundaries.
+</details>
+
+---
+
+## Module 6.18 — Reading the Whole Bundle Graph: "Why Is This Even In My Bundle?"
+
+**Difficulty:** ●●●●○ · **Format:** Investigation · **Stack:** React + Vite/Rollup + graph analysis tools
+
+### Prep — Read & Watch Before You Start
+
+**Primary sources:**
+- **source-map-explorer / rollup-plugin-visualizer / webpack-bundle-analyzer** — search `"source-map-explorer rollup-plugin-visualizer webpack-bundle-analyzer compare"` — *Focus on: attributing every byte to a source module and seeing the graph.*
+- **"Why is this module in my bundle" / import-chain tracing** — search `"why is this package in my webpack bundle import chain"` — *Focus on: tracing the import path that pulled a module in (webpack `--display-reasons` / stats, or reasoning from the graph).*
+- **Vite/Rollup — analyzing the dependency graph** — https://rollupjs.org — *Focus on: the module graph concept (modules and their import edges).*
+
+**Search prompts:**
+- `"why is package X in my bundle import chain trace"`
+- `"webpack stats reasons module included"`
+- `"analyze javascript bundle dependency graph"`
+- Ask an AI: *"Teach me to interrogate a bundle graph: for any module in the treemap, how do I find WHY it's included — the import chain (which of my files, through which dependencies, pulled it in)? Walk me through using the visualizer + source maps + webpack stats `reasons` (or Rollup's graph) to trace 'why is this here', so I can decide whether to remove it, replace it, defer it, or accept it. Treat the bundle as a dependency GRAPH I reason about, not just a list of sizes."*
+
+### Exercise 1 — Guided (paste into Claude Code)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.18, Exercise 1 — reading the whole bundle
+graph. Completed: Tracks 0–5, Modules 6.1–6.17. This is the synthesis of the bundle-graph block.
+
+Build me an app with a SURPRISING bundle: a large module is present that I'd never knowingly import —
+it was pulled in transitively (a heavy dep of a dep, or a polyfill, or a locale/icon set imported
+wholesale). Include a visualizer + source maps (and stats/reasons if webpack). Do NOT tell me what or
+why.
+
+Have me treat the bundle as a GRAPH: find the surprising large module in the treemap, then TRACE the
+import chain that pulled it in (which of my files → which dependency → the module), using the
+visualizer / source-map-explorer / stats reasons. Once I know WHY it's there, have me decide the right
+action (remove the import, swap for a lighter dep, import a subpath, defer/lazy-load it, or accept it
+with justification) and apply it. Exam me on tracing 'why is this here' and on choosing the action
+from the reason.
+```
+
+### Exercise 2 — Transfer (paste into Claude Code; Claude verifies)
+
+```text
+Follow CLAUDE.md and PERF-CONTRACT.md. Track 6, Module 6.18, Exercise 2 (transfer) — bundle-graph
+interrogation solo. Apply the Exercise 2 rules: solo first; verdict. This proves the bundle-graph block.
+
+Give me a DIFFERENT app with a different surprising inclusion (a different transitive heavy module).
+Have me, solo and cold: find it, trace WHY it's in the bundle (the full import chain), choose and apply
+the right fix, and prove the win. Don't tell me anything. Exam me on independent bundle-graph
+reasoning. Verdict: can I take an unfamiliar bundle, ask 'why is each big thing here', trace it through
+the graph, and act on the answer (proceed), or redo Exercise 1? If yes, I have true bundle-graph
+systems depth, not just treemap-reading.
+```
+
+### 🔒 SPOILER — What It Teaches
+
+<details>
+<summary>Click only after you finish or give up</summary>
+
+- The synthesis skill: treat the bundle as a **dependency graph** (modules + import edges), not a list of sizes. For any surprising module in the treemap, the key question is **"why is this here?"** — i.e., the **import chain**: which of *your* files, through which dependencies, pulled it in. Tools: the visualizer + **source maps** (`source-map-explorer` attributes bytes to source), and **webpack stats `reasons`** (or Rollup's graph) to trace inclusion.
+- Common surprises: a **heavy dependency of a dependency**, a **polyfill** included for broad support, a **locale or icon set imported wholesale**, or a module kept by one of the failures from 6.15–6.16.
+- Once you know *why*, the action follows: **remove** the import, **swap** for a lighter dep, **import a subpath** instead of the whole package, **defer/lazy-load** it (6.8), or **accept** it with explicit justification. The point is that the decision is driven by the *reason*, which you get from the graph.
+- This is the difference between treemap-reading (6.8: "this is big, split it") and bundle-graph systems-thinking ("this is here *because* of this chain, so the right fix is X") — the depth Yangshun's "understanding your specific bundle graph" actually points at.
+
+The principle: **bundle-graph mastery is interrogating the dependency graph — for any module, tracing the import chain that pulled it in ('why is this here?') via the visualizer, source maps, and stats reasons — and choosing the fix (remove/swap/subpath/defer/accept) from that reason.** Reading sizes tells you *what* is big; reading the graph tells you *why*, which is what lets you actually fix your specific bundle rather than apply generic advice.
+</details>
+
+---
+*End of Track 6 — React & Next.js Performance at Scale. 18 modules. You can now diagnose any React app's performance from the render model up — re-renders, reconciliation, memoization, context, virtualization, code-splitting, hydration, server components, concurrent features, the compiler — and reason about your specific bundle graph: tree-shaking failures, duplicate dependencies, federation, and tracing why anything is in your bundle.*
 
 *Next: Track 7 — Perceived Performance & The UX of Speed, where you make slow things FEEL fast.*
